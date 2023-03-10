@@ -6,7 +6,7 @@ import { Add, Analytics, Balance, ContentCopy, PowerSettingsNew, RadioButtonChec
 import { Button, FormControl, InputLabel, MenuItem, OutlinedInput, Paper, Select, TextField } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import "./home.scss"
-import { CheckIfAdminLogin, depositFunds, getApprovalForErc20, getBalanceOfErc20TOken, getBroker, getDepositionEvents, getDepositionEventsForUser, getTotalDepositedAmount } from '../helpers/metamaskHeleper';
+import { CheckIfAdminLogin, depositFunds, getApprovalForErc20, getBalanceForNative, getBalanceOfErc20TOken, getBroker, getDepositionEvents, getDepositionEventsForUser, getTotalDepositedAmount } from '../helpers/metamaskHeleper';
 import { blockchainConfig } from '../config/blockchain-config';
 import { ethers } from 'ethers';
 import Table from '@mui/material/Table';
@@ -24,12 +24,14 @@ import { ConnectToWallet } from './ConnectToWallet';
 const names = [
     'Ethereum',
     'USDC',
-    'USDT'
+    'USDT',
+    'USD'
 ];
 const imageSource = {
     Ethereum: "https://icons.iconarchive.com/icons/cjdowner/cryptocurrency-flat/512/Ethereum-ETH-icon.png",
     USDT: "https://icons.iconarchive.com/icons/cjdowner/cryptocurrency-flat/512/Tether-USDT-icon.png",
-    USDC: "https://seeklogo.com/images/U/usd-coin-usdc-logo-CB4C5B1C51-seeklogo.com.png"
+    USDC: "https://seeklogo.com/images/U/usd-coin-usdc-logo-CB4C5B1C51-seeklogo.com.png",
+    USD : "https://www.pngitem.com/pimgs/m/295-2955733_dollar-sign-united-states-dollar-currency-symbol-computer.png"
 }
 
 
@@ -43,12 +45,14 @@ export default function Home() {
     const [balances, setBalance] = React.useState({
         Ethereum: 0,
         USDC: 0,
-        USDT: 0
+        USDT: 0,
+        USD : 0
     })
     const [netDeposited, setNetDeposited] = React.useState({
         Ethereum: 0,
         USDC: 0,
-        USDT: 0
+        USDT: 0,
+        USD : 0
     })
     const [userHistory, setUserHistory] = React.useState([])
     const [amount, setAmount] = React.useState(0)
@@ -67,16 +71,18 @@ export default function Home() {
         const balance = {
             Ethereum: 0,
             USDC: 0,
-            USDT: 0
+            USDT: 0,
+            USD : 0
         }
         const netDeposited = {
             Ethereum: 0,
             USDC: 0,
-            USDT: 0
+            USDT: 0,
+            USD : 0
         }
         await Promise.all(names.map(async token => {
             if (token === "Ethereum") {
-                balance.Ethereum = parseFloat(localStorage.getItem("balance")).toFixed(3)
+                balance.Ethereum = await getBalanceForNative();
             }
             else {
                 try {
@@ -158,7 +164,6 @@ export default function Home() {
         const token = blockchainConfig[tokenName];
         const user = account
         const _amount = ethers.utils.parseUnits(amount.toString(),"ether");
-        console.log(_amount, user, token);
 
         //step 1 get approval from user
         if(tokenName !== "Ethereum"){
@@ -166,7 +171,6 @@ export default function Home() {
             setApprovalPending(true)
 
             const isApproved = await getApprovalForErc20(_amount,blockchainConfig.paymentReciever, user, token);
-            console.log(isApproved);
 
             if(isApproved){
                 setApprovalPending(false);
@@ -265,6 +269,13 @@ export default function Home() {
                         </div>
                         <p className='deposited-amt-detail'><span>{netDeposited.USDC}</span> <RadioButtonChecked fontSize='small' /></p>
                     </div>
+                    <div className='token-balance-info'>
+                        <div>
+                            <img src={imageSource.USD} alt="usdc" />
+                            <p><strong>{balances.USD}</strong>  USD</p>
+                        </div>
+                        <p className='deposited-amt-detail'><span>{netDeposited.USD}</span> <RadioButtonChecked fontSize='small' /></p>
+                    </div>
                 </div>
             </Paper>
         </>
@@ -287,7 +298,6 @@ export default function Home() {
                         <TableBody>
                             {userHistory.map((data, i) => (
                                 <>
-                                {console.log(data)}
                                 <TableRow key={i+1}>
                                     <TableCell component="th" scope="row" style={{fontSize:"15px", color:"rgb(95, 94, 94)"}} >
                                         {data.returnValues.from.slice(0,5) + "..." + data.returnValues.from.slice(-4)}
@@ -318,10 +328,16 @@ export default function Home() {
                 USDT
             </div>
         }
-        else{
+        else if(token.toLowerCase() === blockchainConfig.USDC.toLowerCase()){
             return <div className='user-history-token'>
                 <img src={imageSource.USDC} alt="usdc" width={"18px"} height={"18px"} style={{marginRight : "5px"}} />
                 USDC
+            </div>
+        }
+        else{
+            return <div className='user-history-token'>
+                <img src={imageSource.USD} alt="usd" width={"18px"} height={"18px"} style={{marginRight : "5px"}} />
+                USD
             </div>
         }
     }

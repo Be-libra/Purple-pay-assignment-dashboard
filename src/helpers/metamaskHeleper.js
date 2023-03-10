@@ -7,7 +7,10 @@ import paymentRecieverAbi from "../contracts/paymentDepositABI.json"
 import Web3 from "web3"
 
 const { ethereum } = window;
-const provider = new ethers.providers.Web3Provider(window.ethereum);
+let provider
+if(ethereum){
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+}
 
 if(ethereum){
     window.ethereum.on('accountsChanged', async function (accounts) {
@@ -22,9 +25,10 @@ export const connectWallet = async () => {
     try {
         if (!ethereum) {
             toast.error("Please install metamask")
+            return null
         }
         const accounts = await ethereum.request({
-            method: 'eth_requestAccounts',
+            method: 'eth_requestAccounts'
         });
         let balance = await provider.getBalance(accounts[0]);
         let bal = ethers.utils.formatEther(balance);
@@ -35,6 +39,28 @@ export const connectWallet = async () => {
     } catch (error) {
         console.log(error);
         return false
+    }
+}
+
+export const getBalanceForNative = async() =>{
+    try {
+        if (!ethereum) {
+            return 0
+        }
+        const accounts = await ethereum.request({
+            method: 'eth_requestAccounts',
+        });
+        let balance = await provider.getBalance(accounts[0]);
+        let bal = ethers.utils.formatEther(balance);
+        localStorage.setItem("balance", parseFloat(bal).toFixed(4))
+
+        if(bal > 0){
+            return parseFloat(bal).toFixed(3)
+        }
+
+        return 0
+    } catch (error) {
+        return 0
     }
 }
 
@@ -169,8 +195,6 @@ export const depositFunds = async(user, erc20Token, amount) =>{
 export const CheckIfAdminLogin = async() =>{
     try {
         const signer = provider.getSigner();
-
-        console.log(signer);
 
         //initialise paymentReciever
         const paymentReciever = new ethers.Contract(blockchainConfig.paymentReciever, paymentRecieverAbi, signer);
