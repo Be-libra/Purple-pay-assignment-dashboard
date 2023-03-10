@@ -7,7 +7,10 @@ import paymentRecieverAbi from "../contracts/paymentDepositABI.json"
 import Web3 from "web3"
 
 const { ethereum } = window;
-const provider = new ethers.providers.Web3Provider(window.ethereum);
+let provider
+if(ethereum){
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+}
 
 if(ethereum){
     window.ethereum.on('accountsChanged', async function (accounts) {
@@ -22,6 +25,7 @@ export const connectWallet = async () => {
     try {
         if (!ethereum) {
             toast.error("Please install metamask")
+            return null;
         }
         const accounts = await ethereum.request({
             method: 'eth_requestAccounts',
