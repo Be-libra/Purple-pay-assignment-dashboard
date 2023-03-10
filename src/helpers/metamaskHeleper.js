@@ -25,7 +25,7 @@ export const connectWallet = async () => {
     try {
         if (!ethereum) {
             toast.error("Please install metamask")
-            return null
+            return null;
         }
         const accounts = await ethereum.request({
             method: 'eth_requestAccounts'
